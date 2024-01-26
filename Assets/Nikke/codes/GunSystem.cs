@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Burst.Intrinsics;
 using UnityEngine;
 using TMPro;
+using UnityEditor.ShaderGraph.Internal;
 
 public class GunSystem : MonoBehaviour
 {
@@ -12,20 +13,23 @@ public class GunSystem : MonoBehaviour
     public float fireRate, spread, range, reloadTime;
     public int magazineSize, bulletsPerTaps;
     public bool allowButtonHold;
-    int bulletsLeft, bulletShot;
+    int bulletsLeft;
 
     // bools
     bool shooting, readyToShoot, reloading;
 
     // References
     public Camera tpsCam;
+    public Transform gunModel;
     public Transform attackPoint;
+    public Transform pivotPoint;
     public RaycastHit rayHit;
     public LayerMask whattIsEnemy;
 
     // Graphics
     public GameObject muzzleFlash;
     public TextMeshProUGUI text;
+    public TrailRenderer bulletTrail;
 
 
     private void Awake()
@@ -34,15 +38,7 @@ public class GunSystem : MonoBehaviour
         readyToShoot = true;
     }
 
-    private void Update()
-    {
-        MyInput();
-
-        // SetText
-        // text.SetText(bulletsLeft + "/" + magazineSize);
-    }
-
-    private void MyInput()
+    public void MyInput()
     {
         // Shooting state
         if (allowButtonHold) shooting = Input.GetKey(KeyCode.Mouse0);
@@ -59,63 +55,87 @@ public class GunSystem : MonoBehaviour
 
     }
 
-    private void Shoot()
+    public void Shoot()
     {
         readyToShoot = false;
 
-        // Spread
-        float x = Random.Range(-range, range);
-        float y = Random.Range(-range, range);
+        // 원형 spread
+        float angle = Random.Range(0f, 2f * Mathf.PI); // 0에서 2파이(360도) 사이의 무작위 각도를 선택합니다.
+        float radius = Random.Range(0f, spread); // 0에서 spread 사이의 무작위 반지름을 선택합니다.
 
-        // Direction with spread
-        // Vector3 mousePos = Input.mousePosition;
-        // mousePos.z = 10f;
-        // Debug.Log(mousePos);
-        // // Vector3 direction = tpsCam.transform.forward + new Vector3(x, y, 0);
-        // mousePos = tpsCam.ScreenToWorldPoint(mousePos);
-        // Vector3 direction = (mousePos - attackPoint.position).normalized;
-        // // Debug.DrawRay(attackPoint.position, mousePos - transform.position, Color.red, 20f);
-        // // Debug.DrawRay(attackPoint.position, direction * 20f, Color.red, 20f);
-        // Debug.Log(mousePos);
+        float x = radius * Mathf.Cos(angle);
+        float y = radius * Mathf.Sin(angle);
 
 
+
+        // 마우스 위치 + 스프레드 보정
+        Ray ray = tpsCam.ScreenPointToRay(Input.mousePosition + new Vector3(x, y, 0));
 
         // RayCast 마우스가 보고 있는 물체에 바로 쏘아줌
-        Ray ray = tpsCam.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out rayHit, range, whattIsEnemy))
         {
+
+            // 총 회전
+            Vector3 pivotToHit = rayHit.point - pivotPoint.position;
+            Vector3 newDirection = pivotToHit.normalized;
+            gunModel.rotation = Quaternion.LookRotation(newDirection, Vector3.up);
+
+
             Debug.Log(rayHit.collider.name);
 
-            Debug.Log(rayHit.point);
-            Debug.DrawRay(attackPoint.position, rayHit.point - attackPoint.position, Color.red, 20f);
+            if (rayHit.collider.CompareTag("Enemy"))
+            {
+                TrailRenderer trail = Instantiate(bulletTrail, attackPoint.position, Quaternion.identity);
+                StartCoroutine(SpawnTrail(trail, rayHit));
+                rayHit.collider.GetComponent<EnemyAction>().TakeDamage(damage);
+                GameObject instantiatedMuzzleFlash = Instantiate(muzzleFlash, attackPoint.position, Quaternion.identity);
 
-            // if (rayHit.collider.CompareTag("Enemy"))
-            // {
-            //     rayHit.collider.GetComponent<ShootingAi>().TakeDame(damage);
-            // }
+                bulletsLeft--;
+                Destroy(instantiatedMuzzleFlash, 0.1f);
+            }
+
+            // Debug.DrawRay(attackPoint.position, rayHit.point - attackPoint.position, Color.red, 20f);
+
         }
 
 
-        GameObject instantiatedMuzzleFlash = Instantiate(muzzleFlash, attackPoint.position, Quaternion.identity);
-
-        bulletsLeft--;
         Invoke("ResetShot", fireRate);
 
-        Destroy(instantiatedMuzzleFlash, 0.1f);
 
 
 
+    }
+
+    private IEnumerator SpawnTrail(TrailRenderer trail, RaycastHit rayHit)
+    {
+        float time = 0;
+        Vector3 startPos = trail.transform.position;
+
+        while (time < 1)
+        {
+            trail.transform.position = Vector3.Lerp(startPos, rayHit.point, time);
+            time += Time.deltaTime / trail.time;
+
+            yield return null;
+        }
+        trail.transform.position = rayHit.point;
+
+        Destroy(trail.gameObject, trail.time);
     }
 
     private void ResetShot()
     {
         readyToShoot = true;
+
+
     }
 
     private void Reload()
     {
         reloading = true;
+        gunModel.rotation = Quaternion.identity;
         Invoke("ReloadFinished", reloadTime);
+
     }
 
     private void ReloadFinished()
