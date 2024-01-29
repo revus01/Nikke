@@ -724,7 +724,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameManager: {fileID: 0}
-  followSpeed: 500
+  followSpeed: 1000
 --- !u!1 &1063012873
 GameObject:
   m_ObjectHideFlags: 0
@@ -1315,8 +1315,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d16c70e19f29c7a42895cf1d8566c59b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isAutoFire: 1
-  isAutobBurst: 0
+  isAutoFire: 0
+  isAutoBurst: 0
 --- !u!4 &1931678718
 Transform:
   m_ObjectHideFlags: 0
