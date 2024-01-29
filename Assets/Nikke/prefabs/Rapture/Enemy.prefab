@@ -190,6 +190,7 @@ GameObject:
   - component: {fileID: 5574709567339765970}
   - component: {fileID: 7308397257441586059}
   - component: {fileID: 2342707864808200214}
+  - component: {fileID: 439021612532980975}
   m_Layer: 6
   m_Name: Enemy
   m_TagString: Enemy
@@ -300,7 +301,36 @@ MonoBehaviour:
   maxHealth: 100
   offensePower: 10
   defensePower: 10
+  moveSpeed: 3
+  moveDistance: 2
   healthBar: {fileID: 7933513524640999858}
+--- !u!54 &439021612532980975
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2811344835683916794}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &4462715325285255489
 GameObject:
   m_ObjectHideFlags: 0

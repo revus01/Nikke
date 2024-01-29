@@ -7,9 +7,29 @@ public class NikkeAction : MonoBehaviour
     [SerializeField]
     private GunSystem gun;
 
+    public GameManager gameManager;
+
+    bool isAutoFire;
+
+    private void Start()
+    {
+        gameManager = FindAnyObjectByType<GameManager>();
+
+    }
+
     private void Update()
     {
-        gun.MyInput();
+        isAutoFire = gameManager.isAutoFire;
+
+        if (isAutoFire)
+        {
+            gun.AiInput();
+
+        }
+        else
+        {
+            gun.MyInput();
+        }
     }
 
 }

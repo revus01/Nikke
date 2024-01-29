@@ -4,9 +4,12 @@ using Unity.Burst.Intrinsics;
 using UnityEngine;
 using TMPro;
 using UnityEditor.ShaderGraph.Internal;
+using UnityEditor;
 
 public class GunSystem : MonoBehaviour
 {
+    [SerializeField]
+    private CrossHairManager crossHairManager;
 
     // Gun Stats
     public int damage;
@@ -16,7 +19,7 @@ public class GunSystem : MonoBehaviour
     int bulletsLeft;
 
     // bools
-    bool shooting, readyToShoot, reloading;
+    bool shooting, readyToShoot, reloading, playerShooting;
 
     // References
     public Camera tpsCam;
@@ -25,6 +28,8 @@ public class GunSystem : MonoBehaviour
     public Transform pivotPoint;
     public RaycastHit rayHit, spreadHit;
     public LayerMask whattIsEnemy;
+    public GameObject targetEnemy;
+    public GameObject AimPoint;
 
     // Graphics
     public GameObject muzzleFlash;
@@ -50,47 +55,91 @@ public class GunSystem : MonoBehaviour
         // Shoot
         if (readyToShoot && shooting && !reloading && bulletsLeft > 0)
         {
+            crossHairManager.SetAim();
+
             Shoot();
         }
+    }
+
+    public void AiInput()
+    {
+        if (allowButtonHold) playerShooting = Input.GetKey(KeyCode.Mouse0);
+        else playerShooting = Input.GetKeyDown(KeyCode.Mouse0);
+
+        if (Input.GetKeyDown(KeyCode.R) && bulletsLeft < magazineSize && !reloading) Reload();
+
+        if (playerShooting)
+        {
+            crossHairManager.SetAim();
+            Shoot();
+
+            if (targetEnemy)
+            {
+                targetEnemy = null;
+            }
+        }
+        else
+        {
+            // Shoot
+            if (readyToShoot && !reloading && bulletsLeft > 0)
+            {
+                if (targetEnemy == null)
+                {
+                    FindEnemy();
+                }
+                else
+                {
+                    crossHairManager.FollowEnemy(tpsCam, targetEnemy);
+                }
+
+                Shoot();
+            }
+        }
+
+
 
     }
+
 
     public void Shoot()
     {
         readyToShoot = false;
 
-
+        Vector2 aimPos = tpsCam.WorldToScreenPoint(AimPoint.transform.position);
         // 마우스 위치
-        Ray ray = tpsCam.ScreenPointToRay(Input.mousePosition);
+        Ray ray = tpsCam.ScreenPointToRay(aimPos);
 
         // RayCast 마우스가 보고 있는 물체에 바로 쏘아줌
-        if (Physics.Raycast(ray, out rayHit, range, whattIsEnemy))
+        Physics.Raycast(ray, out rayHit, range, whattIsEnemy);
+
+        // 총 회전 - rayHit를 사용하는 이유는 스프레드가 직접적으로 총구 방향을 결정짓는 것은 아니기 때문임. 같은 곳을 보고 쏜다면 같은 곳을 가리켜야 함.
+        Vector3 pivotToHit = rayHit.point - pivotPoint.position;
+        Vector3 newDirection = pivotToHit.normalized;
+        gunModel.rotation = Quaternion.LookRotation(newDirection, Vector3.up);
+
+        if (rayHit.collider.CompareTag("Enemy"))
         {
 
-            // 총 회전 - rayHit를 사용하는 이유는 스프레드가 직접적으로 총규 방향을 결정짓는 것은 아니기 때문임. 같은 곳을 보고 쏜다면 같은 곳을 가리켜야 함.
-            Vector3 pivotToHit = rayHit.point - pivotPoint.position;
-            Vector3 newDirection = pivotToHit.normalized;
-            gunModel.rotation = Quaternion.LookRotation(newDirection, Vector3.up);
+
 
             // 원형 spread
-            float angle = Random.Range(0f, 2f * Mathf.PI); // 0에서 2파이(360도) 사이의 무작위 각도를 선택합니다.
-            float radius = Random.Range(0f, spread); // 0에서 spread 사이의 무작위 반지름을 선택합니다.
+            float angle = Random.Range(0f, 2f * Mathf.PI);
+            float radius = Random.Range(0f, spread);
 
             float x = radius * Mathf.Cos(angle);
             float y = radius * Mathf.Sin(angle);
 
             // 스프레드 적용된 탄착점
-            Ray spreadRay = tpsCam.ScreenPointToRay(Input.mousePosition + new Vector3(x, y, 0));
+            Ray spreadRay = tpsCam.ScreenPointToRay(aimPos + new Vector2(x, y));
             Physics.Raycast(spreadRay, out spreadHit, range);
 
-
-
-            Debug.Log(spreadHit.collider.name);
-
+            // Trail 생성
             TrailRenderer trail = Instantiate(bulletTrail, attackPoint.position, Quaternion.identity);
             StartCoroutine(SpawnTrail(trail, spreadHit));
-            GameObject instantiatedMuzzleFlash = Instantiate(muzzleFlash, attackPoint.position, Quaternion.identity);
 
+            // 총구 화염 생성 및 delayt 후 파괴
+            GameObject instantiatedMuzzleFlash = Instantiate(muzzleFlash, attackPoint.position, Quaternion.identity);
+            Destroy(instantiatedMuzzleFlash, 0.1f);
 
             // 적에게 공격이 닿았을 때만 데미지를 줌.
             if (spreadHit.collider.CompareTag("Enemy"))
@@ -99,20 +148,58 @@ public class GunSystem : MonoBehaviour
             }
 
             bulletsLeft--;
-            Destroy(instantiatedMuzzleFlash, 0.1f);
-
-            // Debug.DrawRay(attackPoint.position, rayHit.point - attackPoint.position, Color.red, 20f);
 
         }
-
-
         Invoke("ResetShot", fireRate);
 
+    }
 
+    // 적을 자동으로 찾는 코드
+    public void FindEnemy()
+    {
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        GameObject closestEnemy = null;
+        float closestDistance = Mathf.Infinity;
+        Vector2 aimPos = tpsCam.WorldToScreenPoint(AimPoint.transform.position);
+
+
+
+        foreach (GameObject enemy in enemies)
+        {
+            Vector3 screenPoint = tpsCam.WorldToScreenPoint(enemy.transform.position);
+            float distanceToCenter = Vector3.Distance(screenPoint, aimPos);
+
+            if (distanceToCenter < closestDistance)
+            {
+                closestDistance = distanceToCenter;
+                closestEnemy = enemy;
+            }
+        }
+
+        if (closestEnemy != null)
+        {
+            // 가장 가까운 적을 목표로 설정
+            targetEnemy = closestEnemy;
+            Debug.Log(closestEnemy.transform.position);
+        }
 
 
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Trail 생성 함수
     private IEnumerator SpawnTrail(TrailRenderer trail, RaycastHit rayHit)
     {
         float time = 0;

@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1732692364156860311}
+  - component: {fileID: 4567878536111894291}
   m_Layer: 6
   m_Name: Rapture
   m_TagString: Untagged
@@ -32,6 +33,25 @@ Transform:
   - {fileID: 332501718519306088}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4567878536111894291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1576000613690176877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceafaa627718ce24298a0702a20fecd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health: 100
+  maxHealth: 100
+  offensePower: 10
+  defensePower: 10
+  moveSpeed: 2
+  moveDistance: 1
+  healthBar: {fileID: 5394609612924066431}
 --- !u!1001 &2649242859039159245
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -109,35 +129,8 @@ PrefabInstance:
     - {fileID: 2342707864808200214, guid: 36c49064bdb577847bfe92a58eb4511f, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2811344835683916794, guid: 36c49064bdb577847bfe92a58eb4511f,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7108852450867056647}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 36c49064bdb577847bfe92a58eb4511f, type: 3}
---- !u!1 &272440717833758775 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2811344835683916794, guid: 36c49064bdb577847bfe92a58eb4511f,
-    type: 3}
-  m_PrefabInstance: {fileID: 2649242859039159245}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &7108852450867056647
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 272440717833758775}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ceafaa627718ce24298a0702a20fecd0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  health: 100
-  maxHealth: 100
-  offensePower: 10
-  defensePower: 10
-  healthBar: {fileID: 5394609612924066431}
 --- !u!4 &332501718519306088 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2330974362666542245, guid: 36c49064bdb577847bfe92a58eb4511f,
