@@ -9,6 +9,8 @@ public class CrossHairManager : MonoBehaviour
 
     public GameManager gameManager;
 
+    public CameraManager cameraManager;
+
     public float followSpeed;
 
     bool isAutoFire;
@@ -16,6 +18,7 @@ public class CrossHairManager : MonoBehaviour
     private void Awake()
     {
         gameManager = FindAnyObjectByType<GameManager>();
+        cameraManager = FindAnyObjectByType<CameraManager>();
     }
 
     void Start()
@@ -27,8 +30,11 @@ public class CrossHairManager : MonoBehaviour
     public void SetAim()
     {
         Vector2 mousePos = Input.mousePosition;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, mousePos, Camera.main, out mousePos);
+        Debug.Log(mousePos);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, mousePos, cameraManager.focusedCamera, out mousePos);
         transform.localPosition = mousePos;
+        Debug.Log(mousePos);
+
     }
 
     // 자동 조준
@@ -38,8 +44,7 @@ public class CrossHairManager : MonoBehaviour
         Vector2 enemyPos = cam.WorldToScreenPoint(enemy.transform.position);
         Vector2 aimPos = cam.WorldToScreenPoint(transform.position);
 
-        Debug.Log(enemyPos);
-        Debug.Log(enemyPos);
+
 
         aimPos = Vector2.MoveTowards(aimPos, enemyPos, Time.deltaTime * followSpeed);
 

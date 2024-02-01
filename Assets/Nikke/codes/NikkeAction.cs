@@ -7,9 +7,10 @@ public class NikkeAction : MonoBehaviour
     [SerializeField]
     private GunSystem gun;
 
-    public GameManager gameManager;
+    private GameManager gameManager;
 
-    bool isAutoFire;
+    bool isAutoFire, isFocused;
+    public int nikkeNum;
 
     private void Start()
     {
@@ -21,14 +22,16 @@ public class NikkeAction : MonoBehaviour
     {
         isAutoFire = gameManager.isAutoFire;
 
-        if (isAutoFire)
-        {
-            gun.AiInput();
+        isFocused = gameManager.focusedNikke == nikkeNum;
 
+
+        if (isFocused && !isAutoFire)
+        {
+            gun.MyInput();
         }
         else
         {
-            gun.MyInput();
+            gun.AiInput(isFocused);
         }
     }
 

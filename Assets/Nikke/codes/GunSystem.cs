@@ -16,7 +16,7 @@ public class GunSystem : MonoBehaviour
     public float fireRate, spread, range, reloadTime;
     public int magazineSize, bulletsPerTaps;
     public bool allowButtonHold;
-    int bulletsLeft;
+    public int bulletsLeft;
 
     // bools
     bool shooting, readyToShoot, reloading, playerShooting;
@@ -50,37 +50,59 @@ public class GunSystem : MonoBehaviour
         else shooting = Input.GetKeyDown(KeyCode.Mouse0);
 
         // Reloading
-        if (Input.GetKeyDown(KeyCode.R) && bulletsLeft < magazineSize && !reloading) Reload();
+        if (bulletsLeft == 0 && !reloading) Reload();
+
 
         // Shoot
         if (readyToShoot && shooting && !reloading && bulletsLeft > 0)
         {
             crossHairManager.SetAim();
-
+            Debug.Log("여기서 발사했는데");
             Shoot();
         }
     }
 
-    public void AiInput()
+    public void AiInput(bool isFocused)
     {
-        if (allowButtonHold) playerShooting = Input.GetKey(KeyCode.Mouse0);
-        else playerShooting = Input.GetKeyDown(KeyCode.Mouse0);
-
-        if (Input.GetKeyDown(KeyCode.R) && bulletsLeft < magazineSize && !reloading) Reload();
-
-        if (playerShooting)
+        if (isFocused)
         {
-            crossHairManager.SetAim();
-            Shoot();
+            if (allowButtonHold) playerShooting = Input.GetKey(KeyCode.Mouse0);
+            else playerShooting = Input.GetKeyDown(KeyCode.Mouse0);
 
-            if (targetEnemy)
+            if (bulletsLeft == 0 && !reloading) Reload();
+
+            if (playerShooting && readyToShoot && !reloading && bulletsLeft > 0)
             {
-                targetEnemy = null;
+                crossHairManager.SetAim();
+                Shoot();
+                if (targetEnemy)
+                {
+                    targetEnemy = null;
+                }
+            }
+            else
+            {
+
+                // Shoot
+                if (readyToShoot && !reloading && bulletsLeft > 0)
+                {
+                    if (targetEnemy == null)
+                    {
+                        FindEnemy();
+                    }
+                    else
+                    {
+                        crossHairManager.FollowEnemy(tpsCam, targetEnemy);
+                    }
+
+                    Shoot();
+                }
             }
         }
         else
         {
-            // Shoot
+            if (bulletsLeft == 0 && !reloading) Reload();
+
             if (readyToShoot && !reloading && bulletsLeft > 0)
             {
                 if (targetEnemy == null)
@@ -95,9 +117,6 @@ public class GunSystem : MonoBehaviour
                 Shoot();
             }
         }
-
-
-
     }
 
 
@@ -106,11 +125,15 @@ public class GunSystem : MonoBehaviour
         readyToShoot = false;
 
         Vector2 aimPos = tpsCam.WorldToScreenPoint(AimPoint.transform.position);
+
+        // Debug.Log(aimPos);
         // 마우스 위치
         Ray ray = tpsCam.ScreenPointToRay(aimPos);
 
         // RayCast 마우스가 보고 있는 물체에 바로 쏘아줌
         Physics.Raycast(ray, out rayHit, range, whattIsEnemy);
+
+        // Debug.Log(rayHit.point);
 
         // 총 회전 - rayHit를 사용하는 이유는 스프레드가 직접적으로 총구 방향을 결정짓는 것은 아니기 때문임. 같은 곳을 보고 쏜다면 같은 곳을 가리켜야 함.
         Vector3 pivotToHit = rayHit.point - pivotPoint.position;
@@ -119,9 +142,6 @@ public class GunSystem : MonoBehaviour
 
         if (rayHit.collider.CompareTag("Enemy"))
         {
-
-
-
             // 원형 spread
             float angle = Random.Range(0f, 2f * Mathf.PI);
             float radius = Random.Range(0f, spread);
@@ -180,7 +200,7 @@ public class GunSystem : MonoBehaviour
         {
             // 가장 가까운 적을 목표로 설정
             targetEnemy = closestEnemy;
-            Debug.Log(closestEnemy.transform.position);
+            // Debug.Log(closestEnemy.transform.position);
         }
 
 
